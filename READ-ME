@@ -1,0 +1,164 @@
+# BERTimbau LGPD Sensitive-Document Classifier
+
+A binary text classifier that flags documents containing **personal or sensitive data** under the **LGPD** (Brazilian General Data Protection Law — *Lei Geral de Proteção de Dados*). The model is built on **BERTimbau** (`neuralmind/bert-base-portuguese-cased`) and fine-tuned on a Portuguese-language corpus.
+
+This repository accompanies a research paper submitted to **EGOV-CeDEM-ePart 2026**.
+
+---
+
+## Overview
+
+The classifier assigns each document to one of two classes:
+
+- **Sensitive (1)** — the document contains personal or sensitive data as defined by the LGPD.
+- **Not sensitive (0)** — the document does not.
+
+The pipeline fine-tunes BERTimbau, evaluates it on a held-out validation split, and exports metrics, per-document predictions, an environment fingerprint, and a probability-distribution figure.
+
+---
+
+## Reproducibility
+
+Runs are configured for **full determinism**, so results can be reproduced on equivalent hardware:
+
+- Fixed random seed (`seed = 42`) via `set_seed` and `TrainingArguments`.
+- cuDNN deterministic mode (`torch.backends.cudnn.deterministic = True`, `benchmark = False`).
+- Deterministic algorithms (`torch.use_deterministic_algorithms(True)`).
+- `CUBLAS_WORKSPACE_CONFIG=:4096:8`.
+- An environment fingerprint (Python, PyTorch, Transformers, CUDA/cuDNN, GPU) is written to the metrics file.
+
+> Determinism guarantees are strongest when the same library versions, CUDA/cuDNN builds, and GPU are used. See the `environment` block in `metrics_no_dates.json` for the reference setup.
+
+---
+
+## Data privacy (LGPD)
+
+**The training dataset is intentionally NOT included in this repository.**
+
+The corpus contains personal and sensitive data, and is withheld to comply with the LGPD. Only the fixed random seed and the code are shared, so the pipeline stays reproducible while the underlying personal data remains protected.
+
+- `dataset_balanceado_70_30.csv` (training corpus) — **not distributed**.
+- `val_predictions_no_dates.csv` — safe to share: it contains only the predicted probability (`prob_sensitive`) and the true label (`true_label`), **not** the document text.
+
+If you clone this repository, add your own dataset with the expected schema (see [Dataset format](#dataset-format)).
+
+---
+
+## The "no-dates" scenario
+
+To test whether the model relies on superficial cues rather than semantic content, dates are stripped from the text before training and evaluation (`REMOVE_DATES = True`). The date-removal step targets numeric dates (e.g. `dd/mm/yyyy`), four-digit years, and Portuguese month names.
+
+The primary reported results correspond to this **dates-removed** scenario.
+
+---
+
+## Results (no-dates scenario)
+
+| Metric | Value |
+|---|---|
+| Accuracy | 75.00% |
+| F1 — Sensitive class | 83.66% |
+| Macro-F1 | 65.23% |
+
+**Per-class report**
+
+| Class | Precision | Recall | F1 | Support |
+|---|---|---|---|---|
+| Not sensitive (0) | 0.579 | 0.393 | 0.468 | 84 |
+| Sensitive (1) | 0.790 | 0.889 | 0.837 | 216 |
+
+**Confusion matrix** (rows = true, columns = predicted)
+
+|  | Pred 0 | Pred 1 |
+|---|---|---|
+| **True 0** | 33 | 51 |
+| **True 1** | 24 | 192 |
+
+The model favors recall on the sensitive class (0.889), which is the desirable behavior for a screening tool: it is better to over-flag than to miss a document containing personal data.
+
+---
+
+## Requirements
+
+- Python 3.9+
+- PyTorch (CUDA build recommended)
+- `transformers`, `datasets`, `scikit-learn`, `pandas`, `numpy`, `scipy`, `matplotlib`, `seaborn`
+
+Install:
+
+```bash
+pip install torch transformers datasets scikit-learn pandas numpy scipy matplotlib seaborn
+```
+
+Reference versions used for the reported results are recorded in `metrics_no_dates.json` (`environment` block): Transformers 4.40.2, PyTorch 2.5.1+cu121, CUDA 12.1, scikit-learn 1.6.1.
+
+---
+
+## Dataset format
+
+The script expects a CSV named `dataset_balanceado_70_30.csv` with two columns:
+
+| Column | Description |
+|---|---|
+| `texto` | The document text (string). |
+| `sensivel` | Label: `1` = sensitive, `0` = not sensitive. |
+
+The data is split 80/20 into training and validation with a fixed seed (`random_state = 42`).
+
+---
+
+## Usage
+
+Configure the scenario at the top of the script:
+
+```python
+REMOVE_DATES = True   # strip dates before training/eval
+FULL_DETERMINISM = True
+```
+
+Run:
+
+```bash
+python classifier_en_FV.py
+```
+
+### Outputs
+
+| File | Description |
+|---|---|
+| `metrics_no_dates.json` | Accuracy, F1, macro-F1, confusion matrix, per-class report, config, and environment fingerprint. |
+| `val_predictions_no_dates.csv` | Per-document predicted probability and true label (no text). |
+| `figure1_boxplot_no_dates.png` | Distribution of predicted probabilities by true class. |
+| `modelo_classificador_no_dates/` | Saved fine-tuned model and tokenizer. |
+
+At the end, the script starts an interactive prompt (`RUN_INTERACTIVE = True`) where you can type a text and get a `Sensitive (LGPD)` / `Not sensitive` prediction. Set it to `False` to disable.
+
+---
+
+## Suggested `.gitignore`
+
+To keep sensitive data and large artifacts out of version control:
+
+```gitignore
+# Sensitive corpus — do NOT commit (LGPD)
+dataset_balanceado_70_30.csv
+*.csv
+!val_predictions_no_dates.csv   # predictions only (no text) — safe to keep
+
+# Trained model artifacts
+modelo_classificador_*/
+results_*/
+logs_*/
+```
+
+---
+
+## Citation
+
+If you use this code, please cite the associated EGOV-CeDEM-ePart 2026 paper. *(Reference to be added upon acceptance.)*
+
+---
+
+## License
+
+Add a license of your choice (e.g., MIT). Note that any license applies to the **code only** — it does not cover the withheld dataset.
