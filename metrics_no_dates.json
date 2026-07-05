@@ -1,0 +1,68 @@
+{
+  "scenario": "no_dates",
+  "accuracy": 0.75,
+  "f1_sensitive_binary": 0.8366013071895425,
+  "macro_f1": 0.6523432067862607,
+  "confusion_matrix_rows_true_cols_pred": [
+    [
+      33,
+      51
+    ],
+    [
+      24,
+      192
+    ]
+  ],
+  "per_class_report": {
+    "Not sensitive (0)": {
+      "precision": 0.5789473684210527,
+      "recall": 0.39285714285714285,
+      "f1-score": 0.46808510638297873,
+      "support": 84.0
+    },
+    "Sensitive (1)": {
+      "precision": 0.7901234567901234,
+      "recall": 0.8888888888888888,
+      "f1-score": 0.8366013071895425,
+      "support": 216.0
+    },
+    "accuracy": 0.75,
+    "macro avg": {
+      "precision": 0.684535412605588,
+      "recall": 0.6408730158730158,
+      "f1-score": 0.6523432067862607,
+      "support": 300.0
+    },
+    "weighted avg": {
+      "precision": 0.7309941520467835,
+      "recall": 0.75,
+      "f1-score": 0.7334167709637047,
+      "support": 300.0
+    }
+  },
+  "config": {
+    "model_name": "neuralmind/bert-base-portuguese-cased",
+    "num_train_epochs": 5,
+    "per_device_train_batch_size": 8,
+    "per_device_eval_batch_size": 8,
+    "max_length": 128,
+    "seed": 42,
+    "remove_dates": true,
+    "full_determinism": true
+  },
+  "environment": {
+    "python": "3.9.13",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.40.2",
+    "numpy": "2.0.2",
+    "sklearn": "1.6.1",
+    "cuda_available": true,
+    "cuda_version": "12.1",
+    "cudnn_version": 90100,
+    "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "seed": 42,
+    "full_determinism": true,
+    "remove_dates": true
+  }
+}
